@@ -26,6 +26,8 @@ import (
 // The defaults in the struct tags must match the domain.Default* constants.
 
 type Flags struct {
+	Throwaway                       bool                 `long:"throwaway" yaml:"throwaway" description:"Run CLI vendors in a temporary workspace and remove it afterward"`
+	Yolo                            bool                 `long:"yolo" yaml:"yolo" description:"Request permission bypass from ClaudeCode, CodexCLI, or OMP"`
 	Pattern                         string               `short:"p" long:"pattern" yaml:"pattern" description:"Choose a pattern from the available patterns" default:""`
 	Workflow                        string               `long:"workflow" description:"Run a sequence of patterns defined in a YAML or JSON workflow file" default:""`
 	PatternVariables                map[string]string    `short:"v" long:"variable" description:"Values for pattern variables, e.g. -v=#role:expert -v=#points:30"`
@@ -442,6 +444,8 @@ func (o *Flags) BuildChatOptions() (ret *domain.ChatOptions, err error) {
 	}
 
 	ret = &domain.ChatOptions{
+		Throwaway:           o.Throwaway,
+		Yolo:                o.Yolo,
 		Model:               o.Model,
 		Temperature:         o.Temperature,
 		TopP:                o.TopP,

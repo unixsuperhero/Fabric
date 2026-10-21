@@ -26,6 +26,8 @@ type ChatRequest struct {
 }
 
 type ChatOptions struct {
+	Throwaway           bool `json:"-"`
+	Yolo                bool `json:"-"`
 	Model               string
 	Temperature         float64
 	TopP                float64

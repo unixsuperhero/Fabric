@@ -352,6 +352,8 @@ Fabric supports a wide range of AI providers:
 - OpenAI Codex (ChatGPT/Codex subscription OAuth via private backend)
 - Anthropic (Claude)
 - Claude Code (Claude subscription via the local `claude` CLI)
+- Codex CLI (`CodexCLI`, using the local `codex` executable)
+- Oh My Pi (`OMP`, using the local `omp` executable)
 - Google Gemini
 - Ollama (local models)
 - Azure OpenAI
@@ -397,6 +399,53 @@ Fabric supports a wide range of AI providers:
 - Z AI
 
 Run `fabric --setup` to configure your preferred provider(s), or use `fabric --listvendors` to see all available vendors.
+
+### Local coding-agent CLIs
+
+`ClaudeCode`, `CodexCLI`, and `OMP` run the corresponding executable from your
+`PATH`, using its existing authentication. Install and authenticate the native CLI
+first; Fabric detects the executable without requiring a separate provider key.
+`CodexCLI` is distinct from `Codex`, the existing subscription HTTP provider.
+
+By default, the agent works in the directory where you invoke Fabric. It can read
+that project and leave edits there, subject to the native CLI's permissions.
+Fabric never removes that directory. Use `--throwaway` for the previous disposable
+workspace behavior: create an empty temporary directory and remove it after the
+request, including on failure. It does not copy your project or sandbox the agent;
+edits inside the temporary workspace are discarded.
+
+```bash
+cd ~/proj/my-project
+printf 'Explain this project\n' | fabric -V CodexCLI
+printf 'Fix the failing test\n' | fabric -V OMP --yolo
+printf 'Review this text\n' | fabric -V ClaudeCode --throwaway
+```
+
+Use `-m MODEL` to pass a native model identifier directly to the selected CLI,
+even if it is absent from Fabric's model list. `-m default` leaves model selection
+to the CLI; selecting a different CLI vendor with `-V` and no `-m` does the same.
+`CodexCLI` and `OMP` list this `default` alias rather than querying a separate
+provider catalog. Patterns become system/developer instructions, images use the
+CLI's attachment mechanism, and `--stream` emits assistant text rather than raw
+JSON events. Codex emits each completed assistant message rather than token deltas.
+
+`--yolo` requests the native permission bypass explicitly:
+
+| Fabric vendor | Native option | Effect |
+| --- | --- | --- |
+| `ClaudeCode` | `--dangerously-skip-permissions` | Bypasses permission prompts |
+| `CodexCLI` | `--dangerously-bypass-approvals-and-sandbox` | Bypasses approvals and sandboxing |
+| `OMP` | `--auto-approve` | Auto-approves ordinary tool requests; explicit tool deny/prompt policies still apply |
+
+Without `--yolo`, Fabric does not add a permission-bypass option; native policy
+still applies. ClaudeCode retains its existing empty setting sources and strict
+MCP configuration. YOLO can modify or delete files accessible to the agent, even
+outside its workspace. `--throwaway` is not a safety boundary for YOLO.
+
+These two switches also support YAML configuration (`throwaway` and `yolo`), but
+are not exposed as REST request fields. A CLI vendor used by the Fabric server
+inherits the server's working directory, not a remote caller's directory. Do not
+expose local coding-agent vendors to untrusted requests.
 
 ### Per-Pattern Model Mapping
 
@@ -686,6 +735,8 @@ Usage:
   fabric [OPTIONS]
 
 Application Options:
+      --throwaway                   Run CLI vendors in a temporary workspace and remove it afterward
+      --yolo                        Request permission bypass from ClaudeCode, CodexCLI, or OMP
   -p, --pattern=                    Choose a pattern from the available patterns
   -v, --variable=                   Values for pattern variables, e.g. -v=#role:expert -v=#points:30
   -C, --context=                    Choose a context from the available contexts

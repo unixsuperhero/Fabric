@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add local `CodexCLI` and `OMP` vendors alongside `ClaudeCode`, with native model selection, image attachments, and decoded streaming output. The existing `Codex` HTTP provider is unchanged.
+- Use the invoking directory as the workspace for local agent CLIs. Add `--throwaway` to create and remove a disposable workspace; recursive cleanup never targets the caller's directory.
+- Add `--yolo` with provider-specific permission bypass flags. Temporary workspaces are not sandboxes.
+- Share subprocess execution, cancellation, error handling, and individually owned attachment cleanup across all three CLI vendors.
+
 ## v1.4.553 (2026-10-23)
 
 ### PR [#2306](https://github.com/danielmiessler/Fabric/pull/2306) by [pcbeingused333](https://github.com/pcbeingused333): fix(anthropic): don't send thinking.type=disabled to models that reject it
@@ -159,6 +166,7 @@
 - Localized base URL validation errors across all supported locales.
 - If you use an `http://` base URL to a host other than localhost, change it to `https://` or use a local tunnel. Otherwise the vendor is not loaded. Run with `--debug=3` to see the reason.
 
+||||||| parent of a8802af5 (feat: add Codex and OMP CLI agents with opt-in throwaway workspaces)
 ## v1.4.535 (2026-10-21)
 
 ### PR [#2284](https://github.com/danielmiessler/Fabric/pull/2284) by [pcbeingused333](https://github.com/pcbeingused333) and [ksylvan](https://github.com/ksylvan): fix(gemini): keep thought summaries out of the output and count thinking tokens

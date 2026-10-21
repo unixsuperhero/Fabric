@@ -14,12 +14,12 @@ import (
 
 	"github.com/danielmiessler/fabric/internal/i18n"
 	debuglog "github.com/danielmiessler/fabric/internal/log"
+	"github.com/danielmiessler/fabric/internal/plugins/ai/agentcli"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/anthropic"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/azure"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/azure_entra"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/azureaigateway"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/bedrock"
-	"github.com/danielmiessler/fabric/internal/plugins/ai/claudecode"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/codex"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/copilot"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/digitalocean"
@@ -110,9 +110,11 @@ func NewPluginRegistry(db *fsdb.Db) (ret *PluginRegistry, err error) {
 		exolab.NewClient(),
 		perplexity.NewClient(),
 		codexClient,
-		copilot.NewClient(),    // Microsoft 365 Copilot
-		bedrock.NewClient(),    // AWS Bedrock. Credentials come from setup or the AWS credential chain.
-		claudecode.NewClient(), // Claude Code CLI. It uses the local Claude subscription login.
+		copilot.NewClient(), // Microsoft 365 Copilot
+		bedrock.NewClient(), // AWS Bedrock. Credentials come from setup or the AWS credential chain.
+		agentcli.NewClaudeCode(),
+		agentcli.NewCodexCLI(),
+		agentcli.NewOMP(),
 	)
 
 	for providerName := range openai_compatible.ProviderMap {
@@ -563,6 +565,9 @@ func (o *PluginRegistry) GetChatter(model string, modelContextLength int, vendor
 			return
 		}
 		ret.model = defaultModel
+		if _, isCLI := ret.vendor.(*agentcli.Client); isCLI && vendorName != "" && !strings.EqualFold(vendorName, defaultVendor) {
+			ret.model = "default"
+		}
 	} else {
 		if vendorName != "" {
 			if ret.vendor, err = o.activateVendor(vendorName); err != nil {
@@ -600,7 +605,8 @@ func (o *PluginRegistry) GetChatter(model string, modelContextLength int, vendor
 			allowCodexPassthrough := ret.vendor != nil &&
 				strings.EqualFold(ret.vendor.GetName(), "Codex") &&
 				len(availableVendors) == 0
-			if ret.vendor == nil || (!vendorAvailable && !allowCodexPassthrough) {
+			_, allowCLIPassthrough := ret.vendor.(*agentcli.Client)
+			if ret.vendor == nil || (!vendorAvailable && !allowCodexPassthrough && !allowCLIPassthrough) {
 				err = fmt.Errorf(i18n.T("plugin_registry_model_not_available_for_vendor"), model, vendorName)
 				return
 			}

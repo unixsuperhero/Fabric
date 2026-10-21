@@ -15,6 +15,7 @@ import (
 	debuglog "github.com/danielmiessler/fabric/internal/log"
 	"github.com/danielmiessler/fabric/internal/plugins"
 	"github.com/danielmiessler/fabric/internal/plugins/ai"
+	"github.com/danielmiessler/fabric/internal/plugins/ai/agentcli"
 	"github.com/danielmiessler/fabric/internal/plugins/ai/codex"
 	"github.com/danielmiessler/fabric/internal/plugins/db/fsdb"
 	"github.com/danielmiessler/fabric/internal/tools"
@@ -326,5 +327,38 @@ func newInactiveVendorRegistry(t *testing.T, defaultVendor, defaultModel string,
 		VendorManager: ai.NewVendorsManager(),
 		VendorsAll:    all,
 		Defaults:      defaults,
+	}
+}
+
+func TestGetChatter_NativeCLIModelSelection(t *testing.T) {
+	for _, tc := range []struct {
+		name, model, defaultVendor, defaultModel, want string
+		vendor                                         *agentcli.Client
+	}{
+		{"codex native selector", "custom-codex-model", "ClaudeCode", "claude-sonnet-4-6", "custom-codex-model", agentcli.NewCodexCLI()},
+		{"omp selector from another catalog", "openai/custom-model", "ClaudeCode", "claude-sonnet-4-6", "openai/custom-model", agentcli.NewOMP()},
+		{"switch to CLI default", "", "ClaudeCode", "claude-sonnet-4-6", "default", agentcli.NewCodexCLI()},
+		{"configured CLI model", "", "OMP", "provider/configured-model", "provider/configured-model", agentcli.NewOMP()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			vendors := ai.NewVendorsManager()
+			vendors.AddVendors(tc.vendor, &testVendor{name: "OtherAPI", models: []string{"openai/custom-model"}})
+			registry := &PluginRegistry{
+				Db:            fsdb.NewDb(t.TempDir()),
+				VendorManager: vendors,
+				Defaults: &tools.Defaults{
+					Vendor:             &plugins.Setting{Value: tc.defaultVendor},
+					Model:              &plugins.SetupQuestion{Setting: &plugins.Setting{Value: tc.defaultModel}},
+					ModelContextLength: &plugins.SetupQuestion{Setting: &plugins.Setting{Value: "0"}},
+				},
+			}
+			chatter, err := registry.GetChatter(tc.model, 0, tc.vendor.GetName(), false, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if chatter.vendor.GetName() != tc.vendor.GetName() || chatter.model != tc.want {
+				t.Fatalf("selected %s/%s, want %s/%s", chatter.vendor.GetName(), chatter.model, tc.vendor.GetName(), tc.want)
+			}
+		})
 	}
 }

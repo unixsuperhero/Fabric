@@ -60,6 +60,8 @@ end
 function __fabric_register_completions
         set cmd $argv[1]
         complete -c $cmd -f
+        complete -c $cmd -l throwaway -d "Run CLI vendors in a temporary workspace and remove it afterward"
+        complete -c $cmd -l yolo -d "Request permission bypass from ClaudeCode, CodexCLI, or OMP"
 
         # Options that take a value from a dynamic list
         complete -c $cmd -s p -l pattern -x -d "Choose a pattern from the available patterns" -a "(__fabric_get_patterns)"
