@@ -6,6 +6,7 @@
 - Use the invoking directory as the workspace for local agent CLIs. Add `--throwaway` to create and remove a disposable workspace; recursive cleanup never targets the caller's directory.
 - Add `--yolo` with provider-specific permission bypass flags. Temporary workspaces are not sandboxes.
 - Share subprocess execution, cancellation, error handling, and individually owned attachment cleanup across all three CLI vendors.
+- Add [a standalone README HTML export](readme.html) with repaired document nesting, embedded images and fonts, working section links, and responsive code/table overflow.
 
 ## v1.4.553 (2026-10-23)
 
