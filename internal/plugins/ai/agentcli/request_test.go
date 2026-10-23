@@ -7,9 +7,19 @@ import (
 
 	"github.com/danielmiessler/fabric/internal/chat"
 	"github.com/danielmiessler/fabric/internal/domain"
+	"github.com/danielmiessler/fabric/internal/util/removal"
 )
 
+// approveRemovals makes cleanup delete without a terminal prompt for one test.
+func approveRemovals(t *testing.T) {
+	t.Helper()
+	previous := remover
+	remover = removal.Always
+	t.Cleanup(func() { remover = previous })
+}
+
 func TestPrepareRequestUsesCallerWorkingDirectoryByDefault(t *testing.T) {
+	approveRemovals(t)
 	t.Chdir(t.TempDir())
 	workingDir, err := os.Getwd()
 	if err != nil {
@@ -36,6 +46,7 @@ func TestPrepareRequestUsesCallerWorkingDirectoryByDefault(t *testing.T) {
 }
 
 func TestPrepareRequestOwnsOnlyThrowawayDirectoryAndAttachments(t *testing.T) {
+	approveRemovals(t)
 	t.Chdir(t.TempDir())
 	workingDir, err := os.Getwd()
 	if err != nil {
@@ -80,6 +91,7 @@ func TestPrepareRequestOwnsOnlyThrowawayDirectoryAndAttachments(t *testing.T) {
 }
 
 func TestRequestCleanupNeverRemovesUnownedDirectory(t *testing.T) {
+	approveRemovals(t)
 	callerDir := t.TempDir()
 	attachment, err := os.CreateTemp("", "agentcli-owned-attachment-*")
 	if err != nil {
@@ -101,7 +113,36 @@ func TestRequestCleanupNeverRemovesUnownedDirectory(t *testing.T) {
 	}
 }
 
+func TestRequestCleanupLeavesEverythingWhenRemovalIsDeclined(t *testing.T) {
+	previous := remover
+	remover = removal.Never
+	t.Cleanup(func() { remover = previous })
+
+	t.Chdir(t.TempDir())
+	image := chat.ChatMessagePart{
+		Type:     chat.ChatMessagePartTypeImageURL,
+		ImageURL: &chat.ChatMessageImageURL{URL: "data:image/png;base64,aGk="},
+	}
+	req, err := prepareRequest([]*chat.ChatCompletionMessage{{
+		Role:         chat.ChatMessageRoleUser,
+		MultiContent: []chat.ChatMessagePart{image},
+	}}, &domain.ChatOptions{Throwaway: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(req.throwawayDir); _ = os.Remove(req.Images[0]) })
+
+	req.cleanup()
+	if _, err = os.Stat(req.throwawayDir); err != nil {
+		t.Errorf("declined cleanup removed the throwaway directory: %v", err)
+	}
+	if _, err = os.Stat(req.Images[0]); err != nil {
+		t.Errorf("declined cleanup removed the attachment: %v", err)
+	}
+}
+
 func TestPrepareRequestRejectsMalformedDataAttachment(t *testing.T) {
+	approveRemovals(t)
 	message := &chat.ChatCompletionMessage{
 		Role: chat.ChatMessageRoleUser,
 		MultiContent: []chat.ChatMessagePart{{

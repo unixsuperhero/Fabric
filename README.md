@@ -410,9 +410,17 @@ first; Fabric detects the executable without requiring a separate provider key.
 By default, the agent works in the directory where you invoke Fabric. It can read
 that project and leave edits there, subject to the native CLI's permissions.
 Fabric never removes that directory. Use `--throwaway` for the previous disposable
-workspace behavior: create an empty temporary directory and remove it after the
-request, including on failure. It does not copy your project or sandbox the agent;
-edits inside the temporary workspace are discarded.
+workspace behavior: create an empty temporary directory and offer to remove it after
+the request, including on failure. It does not copy your project or sandbox the agent;
+edits inside the temporary workspace are discarded once you approve the removal.
+
+Every deletion Fabric performs for these vendors (the throwaway workspace and any
+decoded image attachments) is confirmed first on the controlling terminal with a
+`remove PATH? [y/N]` prompt. Enter or anything other than `y`/`yes` keeps the path.
+Without a terminal (for example under cron or a server), nothing is removed and a
+note naming the kept path goes to stderr. Independently of the prompt, Fabric
+refuses to remove the working directory, any of its ancestors, your home directory,
+or a filesystem root.
 
 ```bash
 cd ~/proj/my-project
@@ -735,7 +743,7 @@ Usage:
   fabric [OPTIONS]
 
 Application Options:
-      --throwaway                   Run CLI vendors in a temporary workspace and remove it afterward
+      --throwaway                   Run CLI vendors in a temporary workspace; its removal is confirmed on the terminal afterward
       --yolo                        Request permission bypass from ClaudeCode, CodexCLI, or OMP
   -p, --pattern=                    Choose a pattern from the available patterns
   -v, --variable=                   Values for pattern variables, e.g. -v=#role:expert -v=#points:30

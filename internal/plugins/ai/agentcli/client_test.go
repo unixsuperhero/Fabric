@@ -127,6 +127,7 @@ func TestClaudeCommandEnvironmentUsesCommandDirectoryAndFiltersOnlyAnthropic(t *
 
 func helperClient(t *testing.T, behavior string) *Client {
 	t.Helper()
+	approveRemovals(t)
 	t.Chdir(t.TempDir())
 	executable, err := os.Executable()
 	if err != nil {

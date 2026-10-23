@@ -3,7 +3,8 @@
 ## Unreleased
 
 - Add local `CodexCLI` and `OMP` vendors alongside `ClaudeCode`, with native model selection, image attachments, and decoded streaming output. The existing `Codex` HTTP provider is unchanged.
-- Use the invoking directory as the workspace for local agent CLIs. Add `--throwaway` to create and remove a disposable workspace; recursive cleanup never targets the caller's directory.
+- Use the invoking directory as the workspace for local agent CLIs. Add `--throwaway` to create a disposable workspace; recursive cleanup never targets the caller's directory.
+- Confirm every removal the CLI vendors perform (throwaway workspace, decoded image attachments) on the terminal before deleting; with no terminal, paths are kept. A shared `removal` helper also refuses to delete the working directory, its ancestors, the home directory, or a filesystem root.
 - Add `--yolo` with provider-specific permission bypass flags. Temporary workspaces are not sandboxes.
 - Share subprocess execution, cancellation, error handling, and individually owned attachment cleanup across all three CLI vendors.
 - Add [a standalone README HTML export](readme.html) with repaired document nesting, embedded images and fonts, working section links, and responsive code/table overflow.

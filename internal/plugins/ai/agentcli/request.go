@@ -10,7 +10,12 @@ import (
 
 	"github.com/danielmiessler/fabric/internal/chat"
 	"github.com/danielmiessler/fabric/internal/domain"
+	"github.com/danielmiessler/fabric/internal/util/removal"
 )
+
+// remover gates every deletion of a path this package created behind a
+// confirmation. Tests replace it; production always asks on the terminal.
+var remover = removal.Interactive
 
 type request struct {
 	Dir    string
@@ -93,12 +98,15 @@ func prepareRequest(msgs []*chat.ChatCompletionMessage, opts *domain.ChatOptions
 	return req, nil
 }
 
+// cleanup offers to delete the attachments and throwaway workspace this request
+// created. Each removal is confirmed first; a declined or unconfirmable removal
+// leaves the path in place. The caller's directory is never a candidate.
 func (r *request) cleanup() {
 	for _, path := range r.createdAttachments {
-		_ = os.Remove(path)
+		_ = remover.Remove(path)
 	}
 	if r.throwawayDir != "" {
-		_ = os.RemoveAll(r.throwawayDir)
+		_ = remover.RemoveAll(r.throwawayDir)
 	}
 }
 
