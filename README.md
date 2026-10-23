@@ -1,3 +1,28 @@
+> [!IMPORTANT]
+> **This is a fork.** The original project is [danielmiessler/fabric](https://github.com/danielmiessler/fabric)
+> by [Daniel Miessler](https://danielmiessler.com) and its contributors; all credit for Fabric belongs there.
+> Use the original for upstream issues, releases, and pattern contributions. This fork
+> ([unixsuperhero/Fabric](https://github.com/unixsuperhero/Fabric)) tracks upstream `main` and adds the
+> patches below, all around running local coding-agent CLIs from Fabric.
+>
+> **Main patches in this fork**
+>
+> - **Agents work in your current directory.** `ClaudeCode` (and the new CLI vendors) run in the
+>   directory you invoke Fabric from instead of an empty temp dir, so the agent can read and edit
+>   your project files. Fabric never removes that directory.
+> - **New `CodexCLI` and `OMP` vendors** next to `ClaudeCode`, sharing one subprocess runner with
+>   streaming, image attachments, and `-m` pass-through of native model ids. The `Codex` HTTP
+>   provider is untouched.
+> - **`--throwaway`** restores the old disposable temp workspace on demand; **`--yolo`** maps to each
+>   CLI's native permission-bypass flag.
+> - **Confirm before delete.** Every file or directory Fabric removes for these vendors is confirmed
+>   on the terminal first (`remove PATH? [y/N]`). With no terminal nothing is removed, and the working
+>   directory, its parents, your home, and `/` can never be removed at all.
+> - A standalone [README HTML export](readme.html).
+>
+> Details: [Local coding-agent CLIs](#local-coding-agent-clis) and the
+> [Unreleased section of the changelog](./CHANGELOG.md#unreleased).
+
 <div align="center">
     <a href="https://go.warp.dev/fabric" target="_blank">
         <sup>Special thanks to:</sup>
