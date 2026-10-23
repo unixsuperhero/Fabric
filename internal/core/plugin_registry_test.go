@@ -333,16 +333,21 @@ func newInactiveVendorRegistry(t *testing.T, defaultVendor, defaultModel string,
 func TestGetChatter_NativeCLIModelSelection(t *testing.T) {
 	for _, tc := range []struct {
 		name, model, defaultVendor, defaultModel, want string
-		vendor                                         *agentcli.Client
+		newVendor                                      func() *agentcli.Client
 	}{
-		{"codex native selector", "custom-codex-model", "ClaudeCode", "claude-sonnet-4-6", "custom-codex-model", agentcli.NewCodexCLI()},
-		{"omp selector from another catalog", "openai/custom-model", "ClaudeCode", "claude-sonnet-4-6", "openai/custom-model", agentcli.NewOMP()},
-		{"switch to CLI default", "", "ClaudeCode", "claude-sonnet-4-6", "default", agentcli.NewCodexCLI()},
-		{"configured CLI model", "", "OMP", "provider/configured-model", "provider/configured-model", agentcli.NewOMP()},
+		{"codex native selector", "custom-codex-model", "ClaudeCode", "claude-sonnet-4-6", "custom-codex-model", func() *agentcli.Client { return agentcli.NewCodexCLI(nil) }},
+		{"omp selector from another catalog", "openai/custom-model", "ClaudeCode", "claude-sonnet-4-6", "openai/custom-model", func() *agentcli.Client { return agentcli.NewOMP() }},
+		{"switch to CLI default", "", "ClaudeCode", "claude-sonnet-4-6", "default", func() *agentcli.Client { return agentcli.NewCodexCLI(nil) }},
+		{"configured CLI model", "", "OMP", "provider/configured-model", "provider/configured-model", func() *agentcli.Client { return agentcli.NewOMP() }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			// Keep the CLI vendors' model discovery away from the real home, Codex state, and PATH.
+			t.Setenv("HOME", t.TempDir())
+			t.Setenv("CODEX_HOME", t.TempDir())
+			t.Setenv("PATH", t.TempDir())
+			vendor := tc.newVendor()
 			vendors := ai.NewVendorsManager()
-			vendors.AddVendors(tc.vendor, &testVendor{name: "OtherAPI", models: []string{"openai/custom-model"}})
+			vendors.AddVendors(vendor, &testVendor{name: "OtherAPI", models: []string{"openai/custom-model"}})
 			registry := &PluginRegistry{
 				Db:            fsdb.NewDb(t.TempDir()),
 				VendorManager: vendors,
@@ -352,12 +357,12 @@ func TestGetChatter_NativeCLIModelSelection(t *testing.T) {
 					ModelContextLength: &plugins.SetupQuestion{Setting: &plugins.Setting{Value: "0"}},
 				},
 			}
-			chatter, err := registry.GetChatter(tc.model, 0, tc.vendor.GetName(), false, false)
+			chatter, err := registry.GetChatter(tc.model, 0, vendor.GetName(), false, false)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if chatter.vendor.GetName() != tc.vendor.GetName() || chatter.model != tc.want {
-				t.Fatalf("selected %s/%s, want %s/%s", chatter.vendor.GetName(), chatter.model, tc.vendor.GetName(), tc.want)
+			if chatter.vendor.GetName() != vendor.GetName() || chatter.model != tc.want {
+				t.Fatalf("selected %s/%s, want %s/%s", chatter.vendor.GetName(), chatter.model, vendor.GetName(), tc.want)
 			}
 		})
 	}

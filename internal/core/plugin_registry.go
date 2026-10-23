@@ -113,7 +113,7 @@ func NewPluginRegistry(db *fsdb.Db) (ret *PluginRegistry, err error) {
 		copilot.NewClient(), // Microsoft 365 Copilot
 		bedrock.NewClient(), // AWS Bedrock. Credentials come from setup or the AWS credential chain.
 		agentcli.NewClaudeCode(),
-		agentcli.NewCodexCLI(),
+		agentcli.NewCodexCLI(codexClient.ListModels),
 		agentcli.NewOMP(),
 	)
 

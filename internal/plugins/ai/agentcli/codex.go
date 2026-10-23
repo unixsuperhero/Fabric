@@ -1,6 +1,7 @@
 package agentcli
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,8 +9,13 @@ import (
 	"github.com/danielmiessler/fabric/internal/domain"
 )
 
-func NewCodexCLI() *Client {
-	return newClient("CodexCLI", "codex", codexArgs, codexEvent)
+// NewCodexCLI builds the Codex CLI vendor. fallbackModels, usually the Codex
+// HTTP vendor's ListModels, is consulted only when the CLI's own models cache
+// file is unavailable; it may be nil.
+func NewCodexCLI(fallbackModels func(context.Context) ([]string, error)) *Client {
+	client := newClient("CodexCLI", "codex", codexArgs, codexEvent)
+	client.listModels = codexModelLister(newModelCache(), fallbackModels)
+	return client
 }
 
 func codexArgs(req *request, opts *domain.ChatOptions) []string {

@@ -7,6 +7,7 @@
 - Confirm every removal the CLI vendors perform (throwaway workspace, decoded image attachments) on the terminal before deleting; with no terminal, paths are kept. A shared `removal` helper also refuses to delete the working directory, its ancestors, the home directory, or a filesystem root.
 - Add `--yolo` with provider-specific permission bypass flags. Temporary workspaces are not sandboxes.
 - Share subprocess execution, cancellation, error handling, and individually owned attachment cleanup across all three CLI vendors.
+- List real model catalogs for the CLI vendors: `CodexCLI` reads the Codex CLI's own `models_cache.json` (falling back to the `Codex` HTTP vendor), and `OMP` runs `omp models --json`. Subprocess and network lists are cached for 24 hours under `~/.config/fabric/cache/models/`.
 - Add [a standalone README HTML export](readme.html) with repaired document nesting, embedded images and fonts, working section links, and responsive code/table overflow.
 
 ## v1.4.553 (2026-10-23)

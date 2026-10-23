@@ -38,7 +38,7 @@ func newClient(name, binary string, args argsFunc, decode decodeFunc) *Client {
 		args:       args,
 		decode:     decode,
 		listModels: func(context.Context) ([]string, error) {
-			return []string{"default"}, nil
+			return []string{defaultModel}, nil
 		},
 	}
 }

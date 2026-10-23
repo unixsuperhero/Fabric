@@ -457,10 +457,24 @@ printf 'Review this text\n' | fabric -V ClaudeCode --throwaway
 Use `-m MODEL` to pass a native model identifier directly to the selected CLI,
 even if it is absent from Fabric's model list. `-m default` leaves model selection
 to the CLI; selecting a different CLI vendor with `-V` and no `-m` does the same.
-`CodexCLI` and `OMP` list this `default` alias rather than querying a separate
-provider catalog. Patterns become system/developer instructions, images use the
-CLI's attachment mechanism, and `--stream` emits assistant text rather than raw
-JSON events. Codex emits each completed assistant message rather than token deltas.
+Patterns become system/developer instructions, images use the CLI's attachment
+mechanism, and `--stream` emits assistant text rather than raw JSON events. Codex
+emits each completed assistant message rather than token deltas.
+
+`fabric --listmodels` shows each CLI's own catalog next to the `default` alias:
+
+| Vendor | Source of the model list |
+| --- | --- |
+| `ClaudeCode` | Fabric's built-in Anthropic model list |
+| `CodexCLI` | The Codex CLI's own cache, `$CODEX_HOME/models_cache.json` (default `~/.codex`). If that file is missing, the `Codex` HTTP vendor's catalog when Fabric has it configured. |
+| `OMP` | `omp models --json`, listing each chat model's `provider/id` selector |
+
+Lists that cost a subprocess or network call are cached for 24 hours in
+`~/.config/fabric/cache/models/<Vendor>.json`, so ordinary runs do not spawn the
+CLI. Delete a vendor's file to refresh it early (run `omp models refresh` first if
+OMP's own catalog is stale). When a refresh fails, the stale cache is reused; when
+no list can be obtained at all, only `default` is shown and `-m` still passes any
+model name through to the CLI.
 
 `--yolo` requests the native permission bypass explicitly:
 

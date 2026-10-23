@@ -9,7 +9,9 @@ import (
 )
 
 func NewOMP() *Client {
-	return newClient("OMP", "omp", ompArgs, ompEvent)
+	client := newClient("OMP", "omp", ompArgs, ompEvent)
+	client.listModels = ompModelLister(newModelCache())
+	return client
 }
 
 func ompArgs(req *request, opts *domain.ChatOptions) []string {
